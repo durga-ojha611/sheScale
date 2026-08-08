@@ -1,0 +1,124 @@
+# SHEscale — Backend Structure Build Prompt
+
+> **Purpose of this document:** A *prompt* to hand to an AI coding assistant (or backend engineer) to generate the full backend folder/file structure and connect it to the already-built MongoDB models. This is not the code itself — it is the instruction set that produces it.
+
+---
+
+## 🎯 Context to Give the AI
+
+```
+You are a senior backend engineer (20+ years experience) building the Node.js/Express
+backend for "SHEscale" — a unified 3-pillar platform for female entrepreneurs
+(Funding, Mentorship, Networking).
+
+The MongoDB models are ALREADY BUILT and live in backend/models/:
+User.model.js, FundingApplication.model.js, GovernmentScheme.model.js,
+FinancialPlan.model.js, InterviewSession.model.js, ChatMessage.model.js,
+Match.model.js, MentorBooking.model.js, LocalBusiness.model.js,
+MicroGrant.model.js, plus models/index.js as the central export point.
+
+You already have full context of the project's feature specification and
+architecture document (the SheBuilds AI / SHEscale spec covering all 15 features
+across the Funding Hub, Mentorship Hub, and Networking Hub, plus the Live
+Government Scheme Intelligence Panel). FOLLOW THAT ARCHITECTURE DOCUMENT
+STRICTLY — every route, controller, and service you build must map back to a
+feature described in it. Do not invent features or endpoints that aren't in
+that spec.
+```
+
+---
+
+## 🧩 Master Instruction (paste this to the AI)
+
+```
+Build the complete backend folder and file structure for SHEscale on top of the
+existing models/ folder shown above. Follow these rules strictly:
+
+1. MODULE SYNTAX: Use ES6 `import` syntax everywhere (e.g. `import express from "express"`).
+   Do NOT use CommonJS `require()` anywhere in any file. Set `"type": "module"` in package.json.
+
+2. CODE OPTIMIZATION: Keep every file lean and single-purpose.
+   - Controllers only orchestrate (validate input → call service → return response).
+   - Business logic (scheme matching, PDF parsing, RAG retrieval, financial calculations,
+     matching algorithms) lives in a `services/` layer, never inline in controllers or routes.
+   - No duplicated logic across files — extract shared logic into `utils/`.
+   - Use async/await with a single centralized error-handling middleware — do not
+     repeat try/catch boilerplate in every controller; use an `asyncHandler` wrapper.
+
+3. DATABASE CONNECTION: Create a `config/db.js` that connects to MongoDB using
+   Mongoose and the existing models via `models/index.js`. Connection string must
+   be read from `.env` (already has `.env.example` — follow its variable names).
+   Include connection retry/error logging, and call this connector once from the
+   main `server.js` entry point before the app starts listening.
+
+4. FILE & FOLDER STRUCTURE: Generate a clear, updated structure under `backend/`:
+   backend/
+     config/          → db.js, env loader, third-party API config (Gemini, Calendly, payment gateway)
+     models/          → (already exists — do not modify, only import from here)
+     routes/          → one route file per resource (auth, funding, scheme, mentorship, networking)
+     controllers/      → one controller per route file
+     services/         → business logic + the RAG pipeline (see section 5 below)
+     middlewares/       → auth (JWT), error handler, file upload (multer), rate limiter, validation
+     utils/            → asyncHandler, response formatter, logger, redaction helper for sensitive docs
+     jobs/             → scheduled/cron jobs (government scheme sync — see section 5)
+     scripts/          → (already exists — reuse for one-off/manual data scripts)
+     server.js         → app entry point
+     app.js            → Express app config (middleware registration, route mounting)
+
+5. 🆕 RAG PIPELINE FOR THE LIVE GOVERNMENT SCHEME INTELLIGENCE PANEL:
+   This is the most important new architecture piece — build it as a proper
+   Retrieval-Augmented Generation flow, not a simple API call:
+   - `jobs/schemeSyncJob.js` — a scheduled job (node-cron) that periodically fetches
+     raw scheme data/PDFs from official government scheme sources and passes each
+     one through Gemini's structural-extraction prompt, then upserts the structured
+     result into the GovernmentScheme collection (eligibility, financial terms,
+     required documents, deadlines, application steps).
+   - `services/ragRetrievalService.js` — given a user's natural-language business
+     query (from the Conversational Scheme Matcher), retrieve the most relevant
+     subset of currently-stored GovernmentScheme documents (by embedding similarity
+     or structured filter matching on business type/location/loan size — your call,
+     justify the choice), then pass ONLY that retrieved context + the user query
+     into a Gemini completion call to produce the final matched-scheme response.
+     This keeps matching grounded in live, current scheme data instead of the
+     model's own training knowledge.
+   - `services/geminiService.js` — a single shared wrapper around all Gemini API
+     calls (scheme extraction, PDF Doc-Whisperer parsing, financial plan generation,
+     AI Twin Mentor chat) so there is one place that handles prompts, retries, and
+     API key config — not scattered fetch calls across services.
+   - Expose the retrieval result through a `GET /api/schemes/match` endpoint that
+     the frontend's Scheme Matcher feature calls.
+
+6. SECURITY & MIDDLEWARE:
+   - JWT-based auth middleware protecting all routes except signup/login.
+   - Role-based access control for admin-only endpoints (e.g. manually triggering
+     the scheme sync job).
+   - Multer-based file upload middleware for document scanning (Feature 1.3),
+     with the redaction utility applied before anything touches the DB.
+   - Centralized error-handling middleware returning consistent JSON error shapes.
+   - Basic rate limiting on auth and AI-calling routes.
+
+7. OUTPUT FORMAT: First output the full folder/file tree, then generate each file's
+   code in its own labeled code block (e.g. `backend/config/db.js`), in the order:
+   config → server.js/app.js → middlewares → utils → services → jobs → controllers → routes.
+   After all files, add a short "Data Flow Summary" explaining how a single request
+   (e.g. Conversational Scheme Matcher) travels from route → controller → RAG
+   retrieval service → Gemini service → GovernmentScheme model → response.
+```
+
+---
+
+## ✅ Final Instruction to Append
+
+```
+Confirm at the end that:
+- Every existing model in models/ is actually used by at least one service/controller.
+- The RAG pipeline (job + retrieval service + Gemini service) is wired end-to-end,
+  not left as a stub.
+- The backend connects to MongoDB successfully on startup via config/db.js.
+- No file uses require() — import only.
+```
+
+---
+
+### How to use this prompt
+Paste the **Context** block + **Master Instruction** + **Final Instruction** into your AI coding assistant (or Claude Code) in one message. It already has the architecture spec and the model list in context, so it can generate the full backend structure and the RAG-based Live Government Scheme pipeline in one pass, wired directly to the existing MongoDB models.

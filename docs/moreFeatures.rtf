@@ -1,0 +1,160 @@
+# SHEscale — Funding Checklist, Category Selector & Idea Validation (Analyzed & Advanced Prompt)
+
+> **Purpose of this document:** Your PDF is solid on its own, but two things in it directly overlap with the Smart Scheme Matcher feature you just had me analyze (`IdeaInput.jsx` and the `/api/schemes/scan` endpoint both already exist there). I reconciled the two instead of letting the AI build duplicate versions, and folded in your 5 explicit rules as a standing section the AI has to follow throughout.
+
+---
+
+## 🔍 Analysis — What Needed Fixing Before This Goes to the AI
+
+| Issue in this PDF | Why it's a problem for SHEscale | Fix applied below |
+|---|---|---|
+| Defines a **second `IdeaInput.jsx`** with its own word-count validation | You already have an `IdeaInput.jsx` inside `SchemeMatcher.jsx` from the previous feature prompt. Building a second one creates two components with the same name doing overlapping jobs. | **One `IdeaInput.jsx`**, enhanced with the 100–300 word validation, reused by both the checklist flow and the scheme matcher — not duplicated. |
+| Re-specifies the **entire `/api/schemes/scan` logic** (faiss-node + Gemini `text-embedding-004`) from scratch | This route, and its retrieval logic, already exists in `ragRetrievalService.js` / `geminiService.js` from the prior prompt. Rebuilding it here would create two competing implementations of the same endpoint. | **Extend the existing `/api/schemes/scan` route** with word-count validation, category filter, and `isWomanFounder`/`minWomenOwnership` filter — don't rewrite its core matching logic. |
+| `checklistProgress` proposed as a schema addition without confirming it doesn't collide with existing `User.model.js` fields | You already have a built `User.model.js`. Blind field addition without checking existing structure risks a silent overwrite. | Explicitly instruct the AI to **view the existing `User.model.js` first**, then add `checklistProgress` as a new nested object — additive only. |
+| "Modern gradients" for the Category Selector with no color reference | Same risk as before — an ungoverned gradient will clash with the locked white + `#F50A70` design tokens used everywhere else. | Category Selector's selected/hover states must derive from the **existing accent token**, not a freeform gradient. |
+| No explicit place for `FundingChecklist.jsx` in the existing layout | The architecture already defines a Center Canvas + Right Co-Pilot Panel per pillar. This checklist needs a defined home, not just a floating component. | Placed as a **persistent module at the top of the Funding Hub's Center Canvas** — visible before any pillar sub-feature, since it's the entry point to the whole hub. |
+| Your 5 rules (optimized code, structured code, modern/clear UI, connected stack, rules written into the prompt) weren't yet a standing, explicit section | Without a dedicated rules block, these tend to get treated as vague aspirations instead of hard constraints the AI checks itself against. | Added a **non-negotiable "Standing Rules"** block at the top of the master prompt, referenced again in the final checklist. |
+
+---
+
+## 📏 Standing Rules (apply to every part of this prompt)
+
+```
+RULE 1 — OPTIMIZED CODE: No redundant logic, no duplicate API calls, no re-fetching
+data that's already in state. Reuse existing services/components wherever one already
+exists instead of writing a parallel version.
+
+RULE 2 — STRUCTURED CODE: Every file has one clear responsibility. Components stay
+presentational; validation/business logic lives in hooks or services, not inline in
+JSX. Backend follows the existing routes → controllers → services layering exactly.
+
+RULE 3 — MODERN, CLEAR UI/UX: Every interactive element (checkboxes, pills, textarea,
+CTA) uses the existing white + #F50A70 design tokens, real transition/hover states,
+and clear visual feedback (progress %, live counters, disabled states) — never a
+static, unresponsive UI.
+
+RULE 4 — FULL STACK CONNECTION: Every checkbox, selector, and counter must reflect
+REAL data from MongoDB via the real API — no local-only UI state that isn't persisted.
+Checklist state must survive a page refresh because it's actually saved server-side.
+
+RULE 5 — THESE RULES ARE PART OF THE OUTPUT CONTRACT: The AI must self-check against
+all 5 rules in its final summary, not just silently apply them.
+```
+
+---
+
+## 🧩 Enhanced Master Prompt (paste this to the AI)
+
+```
+ROLE: Senior Full-Stack Architect & UI/UX Specialist working inside the EXISTING
+SHEscale codebase. You already have context on the architecture spec, the built
+backend structure, the built Mongoose models, the existing SchemeMatcher feature
+(IdeaInput.jsx, SchemeCards.jsx, ApplicationDraft.jsx, ragRetrievalService.js,
+geminiService.js), and the white + #F50A70 design token system.
+
+APPLY THE 5 STANDING RULES ABOVE THROUGHOUT THIS ENTIRE TASK.
+
+TASK: Implement the Funding Checklist Tracker and Business Category Selector, and
+enhance the EXISTING IdeaInput.jsx + /api/schemes/scan with strict 100–300 word
+validation and category/founder-eligibility filtering. Do not rebuild anything that
+already exists — extend it.
+
+TECH STACK: React.js (Tailwind CSS mapped to the existing design tokens, Lucide
+Icons), Node.js + Express (ES6 `import` only), MongoDB + Mongoose, Gemini API via
+the shared geminiService.js.
+
+────────────────────────────────────────
+1. FRONTEND — PLACEMENT & COMPONENTS
+────────────────────────────────────────
+A. FundingChecklist.jsx  (NEW component)
+   - Lives as a persistent module at the TOP of the Funding Hub's Center Canvas —
+     the first thing a user sees when entering the Funding Hub, above the scheme
+     matcher and other sub-features.
+   - 4 checkboxes, each bound to a REAL field from the user's checklistProgress
+     (completeProfile, findMatchingScheme, scanIdentityDocs, generatePnLPlan),
+     fetched via GET /api/user/checklist on mount (through the existing centralized
+     API client, not an inline fetch).
+   - Progress bar showing real completion percentage computed from the fetched state
+     (e.g. "2/4 Completed – 50%") — recompute from real data, never hardcode.
+   - Clicking an incomplete item smoothly scrolls/routes to that feature's section
+     within the Funding Hub.
+   - Items auto-check when their corresponding real action completes (e.g. a
+     successful PATCH after profile save, a successful scheme match, a successful
+     scan, a successful P&L generation) — driven by real API responses, not
+     optimistic-only local state that could desync from the server.
+
+B. CategorySelector.jsx  (NEW component)
+   - Grid/pill selector: D2C/E-Commerce, Tech/SaaS, Agriculture/AgTech,
+     Handicrafts/MSME, Healthcare, Services.
+   - Selected state uses the EXISTING #F50A70 accent token (soft accent background
+     + accent border), with a real CSS transition — no arbitrary new gradient colors.
+   - Selected category value feeds into the existing scheme-scan request payload.
+
+C. IdeaInput.jsx  (ENHANCE THE EXISTING COMPONENT — do not create a second one)
+   - Add strict word-count validation: must be between 100 and 300 words.
+   - Live word counter badge updating on every keystroke (e.g. "42 / 100 min words"),
+     styled as a small pill using the existing token system.
+   - Inline red warning exactly when count is out of range: "Please write a valid
+     description of your idea in 100 to 300 words."
+   - The existing "Scan Schemes" CTA stays disabled until: word count is valid AND
+     a category is selected — wire both conditions, not just the word count.
+
+────────────────────────────────────────
+2. BACKEND — EXTEND, DON'T DUPLICATE
+────────────────────────────────────────
+A. Extend the EXISTING POST /api/schemes/scan route (do not create a second scan
+   endpoint):
+   - Payload grows to: { businessIdea, category, isWomanFounder }.
+   - Add backend-side word-count validation as a defense-in-depth check (400 JSON
+     error if <100 or >300 words) — this must exist even though the frontend also
+     validates, since the API must never trust client-side validation alone.
+   - Extend the existing ragRetrievalService.js query to additionally filter
+     GovernmentScheme documents by category and minWomenOwnership ≤ 51% before
+     running the faiss-node similarity search — this is a filter added to the
+     EXISTING retrieval logic, not a new parallel implementation.
+   - On a successful match, call the existing user/checklist service to set
+     findMatchingScheme = true for that user.
+
+B. NEW checklist endpoints (these are genuinely new, build them):
+   - GET /api/user/checklist → returns the current user's real checklistProgress.
+   - PATCH /api/user/checklist → accepts partial updates to individual checklist
+     fields and persists them.
+   - Both live in a new `userChecklistController.js` + `userChecklistService.js`,
+     following the same thin-controller/logic-in-service pattern as the rest of
+     the backend.
+
+────────────────────────────────────────
+3. DATABASE — ADDITIVE ONLY
+────────────────────────────────────────
+- FIRST view the existing User.model.js to confirm current fields before editing.
+- Add a nested `checklistProgress` object to the EXISTING User schema:
+  completeProfile, findMatchingScheme, scanIdentityDocs, generatePnLPlan — each
+  Boolean, default false, with timestamps already inherited from the base schema.
+- Do not touch or restructure any other existing field on User.
+
+────────────────────────────────────────
+4. OUTPUT FORMAT
+────────────────────────────────────────
+Output in this order: (1) the additive User.model.js diff, (2) the 2 new checklist
+endpoints + their controller/service, (3) the diff to the existing scan route/
+ragRetrievalService.js showing exactly what was added, (4) the FundingChecklist.jsx
+and CategorySelector.jsx components, (5) the diff to the existing IdeaInput.jsx
+showing exactly what was added — not a full rewrite.
+```
+
+---
+
+## ✅ Final Instruction to Append
+
+```
+Before finalizing, self-check against all 5 Standing Rules explicitly and confirm:
+- RULE 1: No duplicate scan endpoint, no duplicate IdeaInput component, no
+  redundant re-fetching of checklist state that's already in memory.
+- RULE 2: Checklist/category logic lives in services and hooks, not inline in JSX;
+  backend follows routes → controllers → services exactly.
+- RULE 3: Every new UI element uses the existing white + #F50A70 tokens and has a
+  real transition/hover/disabled state — nothing static or ungoverned in color.
+- RULE 4: Checklist state, category selection, and word validation are all backed
+  by real persisted data — checklist survives a page refresh.
+- RULE 5: This self-check itself is included in the AI's final output, not skipped.
+```

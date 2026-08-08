@@ -1,0 +1,73 @@
+> **Role:** Senior Full-Stack Architect & AI Integration Expert.
+> **Task:** Build the "Mentorship & Upskilling Hub" for women founders featuring a Context-Aware AI Twin, a Pitch Simulator with a Readiness Matrix, and a threshold-locked Human Mentor Booking system.
+>
+> **Tech Stack:** React.js (Tailwind CSS, Lucide Icons), Node.js + Express, MongoDB + Mongoose, Gemini API.
+> **Rules:** Write optimized, modular, production-ready code with complete error handling. Integrate this seamlessly with the existing user structure.
+>
+> ---
+>
+> ### 1. DATABASE SCHEMA DESIGN (Mongoose)
+> 
+> **A. Update User Schema (`models/User.js`)**
+> Extend the existing user model to track readiness scores and unlock states:
+> ```javascript
+> mentorshipHub: {
+>   readinessScore: { type: Number, default: 0 },
+>   isMentorBookingUnlocked: { type: Boolean, default: false },
+>   mockPitchHistory: [{
+>     pitchText: String,
+>     score: Number,
+>     feedback: { strengths: [String], improvements: [String] },
+>     date: { type: Date, default: Date.now }
+>   }]
+> }
+> ```
+> 
+> **B. Create Mentor Schema (`models/Mentor.js`)**
+> ```javascript
+> const mentorSchema = new mongoose.Schema({
+>   name: { type: String, required: true },
+>   title: { type: String, required: true },
+>   expertise: [{ type: String }],
+>   bio: String,
+>   imageUrl: String,
+>   availableSlots: [{ date: String, time: String, isBooked: { type: Boolean, default: false } }]
+> });
+> ```
+>
+> ---
+>
+> ### 2. BACKEND API ROUTES (Express Controllers)
+>
+> **1. `POST /api/mentor/ai-twin` (AI Chat Mentor)**
+> - **Input:** `message`, `chatHistory`, and `businessIdea`.
+> - **Gemini Prompt Logic:** Instruct the AI to act as a highly successful Indian female founder (a persona mixing Falguni Nayar's scale and Kiran Mazumdar-Shaw's pragmatism). Tone must be encouraging yet fiercely realistic, utilizing a slight Hinglish flavor. It must weave the user's `businessIdea` into the advice.
+> 
+> **2. `POST /api/mentor/evaluate-pitch` (Mock Pitch Simulator)**
+> - **Input:** `pitchText` and `businessIdea`.
+> - **Gemini Prompt Logic:** Act as a strict VC/Loan Officer evaluating a pitch for the provided business idea. 
+> - **Output Constraint:** Return ONLY valid JSON format:
+>   `{ "score": integer(0-100), "matrix": { "clarity": int, "financials": int, "marketFit": int }, "strengths": ["...", "..."], "improvements": ["...", "..."] }`
+> - **Action:** Save result to `User.mentorshipHub.mockPitchHistory`. If score >= 80, set `isMentorBookingUnlocked = true`.
+>
+> **3. Mentor Booking Routes**
+> - **`GET /api/mentor/list`:** Check if `req.user.mentorshipHub.isMentorBookingUnlocked` is true. If false, return 403. If true, return list of mentors.
+> - **`POST /api/mentor/book`:** Update specific `slotId` for `mentorId` to `isBooked: true`.
+>
+> ---
+>
+> ### 3. FRONTEND UI COMPONENTS (React + Tailwind)
+>
+> **A. `AITwinChat.jsx`**
+> - Chat UI with sticky header.
+> - Display conversational history, handling markdown formatting securely.
+>
+> **B. `MockPitchSimulator.jsx`**
+> - Textarea for pasting pitch scripts.
+> - **Result View:** Render a circular progress indicator for the overall score and linear progress bars for the 'Readiness Matrix' sub-scores (Clarity, Financials, Market Fit).
+> - Display green-accented lists for strengths and orange/red for improvements.
+> - **Gamification:** If score >= 80, display an unlock success message.
+>
+> **C. `MentorBooking.jsx` (The Lock Mechanism)**
+> - **Locked State:** Render a glassmorphism/blurred overlay with a Lock icon and message: *"Score 80+ in the Mock Pitch Simulator to prove your readiness and unlock 1-on-1 sessions with industry experts."*
+> - **Unlocked State:** Render a grid of `MentorCard` components showing expertise tags and an interactive modal to select `availableSlots`.

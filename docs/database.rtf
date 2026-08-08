@@ -1,0 +1,117 @@
+# SHEscale — MongoDB Database Schema Design Prompt
+
+> **Purpose of this document:** This is a *prompt* to be handed to an AI coding assistant (or a backend engineer) to generate the actual Mongoose/MongoDB schema files for the SHEscale platform. It is not the schema code itself — it is the fully-specified instruction set that produces it.
+
+---
+
+## 🎯 Context to Give the AI / Engineer
+
+You are a senior backend engineer (20+ years experience) designing the MongoDB data layer for **SHEscale** — a unified 3-pillar platform for female entrepreneurs (Funding, Mentorship, Networking), built on Node.js + Mongoose.
+
+The system has 3 pillars plus a core Identity layer:
+1. **Funding Hub** — scheme matching, PDF policy analysis, document pre-flight scanning, AI financial projections.
+2. **Mentorship Hub** — AI Twin mentor chat, AI mock bank/VC interview simulator with readiness scoring, human mentor booking.
+3. **Networking Hub** — skill-based co-founder swipe-matching, hyper-local ecosystem discovery, micro-grant community ledger.
+
+---
+
+## 🧩 Master Instruction (paste this to the AI)
+
+```
+Design and generate production-ready MongoDB schemas using Mongoose for a platform 
+called "SHEscale". Follow these rules strictly:
+
+1. MODULE SYNTAX: Use ES6 `import` syntax everywhere (e.g. `import mongoose from "mongoose"`).
+   Do NOT use CommonJS `require()` anywhere in any file.
+
+2. OPTIMIZATION MANDATE: Do not create a separate collection/schema for every single
+   feature blindly. Before creating a new schema, evaluate whether the data can be
+   safely nested (sub-documents/embedded arrays) inside an existing parent schema
+   without hurting query performance or violating the 16MB document limit.
+   - Merge tightly-coupled, low-cardinality, always-fetched-together data into a single
+     collection using embedded sub-schemas.
+   - Only break into a separate top-level collection when data is high-volume,
+     grows unboundedly, needs independent indexing/pagination, or is queried/updated
+     at high frequency independent of the parent (e.g. chat messages, swipes, ledger transactions).
+   - Aim for the MINIMUM number of top-level collections that still keeps each
+     collection's write/read pattern efficient. State your reasoning briefly above
+     each schema (1-2 lines) explaining why it's standalone vs embedded.
+
+3. Use lean, production-grade Mongoose patterns:
+   - `timestamps: true` on every schema.
+   - Proper `index: true` / compound indexes on frequently-queried fields
+     (userId, status, location, matchScore, createdAt).
+   - Use `enum` for all fixed-value fields (status, role, tier, etc.).
+   - Use `ref` + `ObjectId` for relations instead of duplicating data, EXCEPT where
+     denormalizing a small read-mostly snippet (e.g. mentor name + avatar) clearly
+     saves a lookup — call this out explicitly when you do it.
+   - Keep each schema file concise — prefer compact object literals over verbose
+     multi-line field definitions where readability isn't sacrificed.
+   - Export via `export default mongoose.model(...)`.
+
+4. Sensitive data handling: Any field holding personally identifying documents
+   (Aadhaar, PAN, bank proof, etc.) must be stored only as a redacted reference
+   string / secure file pointer (e.g. `documentRef: String` pointing to encrypted
+   storage), never as raw file data or plaintext identifiers in the schema.
+
+5. Output format: One schema per logical collection, in separate code blocks,
+   clearly labeled with the filename (e.g. `models/User.model.js`), followed by
+   a one-line note on any relationships/refs it depends on.
+```
+
+---
+
+## 🗂️ Required Schemas — Feature-to-Collection Mapping
+
+Give the AI this mapping explicitly so it knows the full scope before deciding what to merge vs. separate:
+
+### 🔐 Core Identity Layer
+- **User** — signup/login (email, password hash, phone, OAuth provider fields), role (`entrepreneur | mentor | admin`), account status.
+- **Profile** — embedded or referenced: business name, stage, city/state (for location-tier matching), skills array, bio, avatar, onboarding completion flags.
+  > Instruct the AI to decide: Profile can likely be **embedded inside User** (1:1, always fetched together) rather than a separate collection — explicitly ask it to justify this choice.
+
+### 💰 Pillar 1 — Funding Hub
+| Feature | Data needed |
+|---|---|
+| 1.1 Conversational Scheme Matcher | Store user's business query + matched scheme results (scheme name, eligibility summary, matchScore) |
+| 1.2 PDF Policy Doc-Whisperer | Store parsed PDF analysis output: eligibility cards, financial terms (loan amount, interest rate), red-flag alerts array, source PDF reference |
+| 1.3 Document Pre-Flight Scanner & Tracker | Stepper/checklist state per application (document type, uploadStatus, scanResult: blurry/cutoff/ok, redacted doc reference) |
+| 1.4 BizCalculus AI Financial Planner | Store unit economics inputs (cost, price, volume assumptions) + generated 3-year projection summary (store computed outputs, not raw chart pixel data) |
+
+> Ask the AI to evaluate: can Scheme Match results + PDF analysis + Document Tracker live as embedded sub-arrays inside a single **FundingApplication** collection (one doc per user-application journey), instead of 4 separate collections? Financial projections are likely reusable/standalone → separate **FinancialPlan** collection makes sense since a user may run multiple "what-if" scenarios.
+
+### 🧠 Pillar 2 — Mentorship Hub
+| Feature | Data needed |
+|---|---|
+| 2.1 AI Twin Mentor chat | Chat sessions + messages (high-volume, append-heavy → standalone collection) |
+| 2.2 AI Mock Bank/VC Interviewer | Interview session transcript summary + Readiness Score Matrix (scores per category: risk, marketing, ops) |
+| 2.3 Human Mentor Booking | Mentor profile (could reuse User with role=mentor + embedded mentor-specific fields), booking/slot schema, AI-vetted brief snapshot attached to booking |
+
+> Ask the AI to justify: Chat messages should be a separate, indexed, paginated collection (high write volume). Readiness Score can be embedded inside the Interview Session doc (small, bounded, fetched together).
+
+### 🤝 Pillar 3 — Networking Hub
+| Feature | Data needed |
+|---|---|
+| 3.1 Skill-Based Swipe-to-Match | Swipe actions (left/right, high volume, standalone) + resulting Match + Chat (can reuse the Mentorship chat schema generically as a `Conversation` model shared across features) |
+| 3.2 Hyper-Local Go-To-Market Blueprint | Location-indexed business directory entries (geo-index on city/lat-long) for nearby non-competing business discovery |
+| 3.3 Micro-Grant Community Ledger | Pitch posts + pledges/transactions (financial, needs an immutable ledger-style standalone collection) + running progress total |
+
+> Ask the AI to unify **Swipe** and **Match** logic efficiently (e.g., a single `Match` doc created only once both sides swipe right, rather than persisting every swipe long-term unless needed for analytics — flag this tradeoff).
+
+---
+
+## ✅ Final Instruction to Append
+
+```
+After listing all schemas, add a short "Collection Count Summary" section:
+- Total top-level collections used (aim to justify a number roughly in the 8-11 range
+  for this entire platform, not 20+).
+- One line per collection stating why it is standalone rather than embedded.
+Also add a "Suggested Indexes" section listing compound indexes recommended for the
+top 3 highest-traffic query patterns (user login, swipe/match lookup, chat pagination).
+```
+
+---
+
+### How to use this prompt
+Paste the **Master Instruction** block + the **Feature-to-Collection Mapping** section into your AI coding assistant (or Claude Code) in one message, and it will return the actual `import`-based Mongoose schema files, sized and merged according to the optimization rules above.

@@ -1,0 +1,30 @@
+import mongoose from 'mongoose';
+
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      dbName: 'shescale',
+    });
+
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+
+    // Register compound indexes once connection is open
+    mongoose.connection.on('open', () => {
+      console.log('📦 MongoDB indexes registered');
+    });
+
+    mongoose.connection.on('error', (err) => {
+      console.error(`❌ MongoDB error: ${err.message}`);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.warn('⚠️  MongoDB disconnected');
+    });
+
+  } catch (error) {
+    console.error(`❌ MongoDB connection failed: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+export default connectDB;

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Ananya Sharma",
+    "expertise": "E-Commerce",
+    "location": "Mumbai"
+  },
+  {
+    "name": "Priya Patel",
+    "expertise": "Tech/SaaS",
+    "location": "Bangalore"
+  },
+  {
+    "name": "Ritu Desai",
+    "expertise": "Healthcare",
+    "location": "Delhi"
+  },
+  {
+    "name": "Kavita Rao",
+    "expertise": "Agriculture",
+    "location": "Pune"
+  },
+  {
+    "name": "Neha Singh",
+    "expertise": "Fashion",
+    "location": "Mumbai"
+  },
+  {
+    "name": "Sneha Gupta",
+    "expertise": "FinTech",
+    "location": "Bangalore"
+  }
+]

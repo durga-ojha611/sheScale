@@ -1,0 +1,161 @@
+# SHEscale — Complete Feature List
+
+*Every feature the website includes, organized by pillar. Includes the newly added Live Government Scheme Intelligence Panel in its correct place inside the Funding Hub.*
+
+---
+
+## 🔐 Core Layer (applies across the whole app)
+
+| # | Feature | What it does |
+|---|---|---|
+| 0.1 | **Signup / Login / Auth** | Email + password and/or OAuth signup, secure session/JWT-based login, role assignment (entrepreneur / mentor / admin). |
+| 0.2 | **Unified Profile** | Business name, stage, location (city/state), skills, bio, avatar, onboarding progress — shared context used across all 3 pillars so the user never re-enters her info. |
+| 0.3 | **Unified Dashboard Shell** | Single workspace with a Center Canvas (changes per pillar) and a Right AI Co-Pilot Panel that dynamically reconfigures itself to assist with whichever pillar is active. |
+
+---
+
+## 💰 Pillar 1 — Funding Hub (Capital & Document Simplification)
+
+| # | Feature | What it does |
+|---|---|---|
+| 1.1 | **Conversational Scheme Matcher & Localized Voice Assist** | User describes her business in plain text/voice; Gemini extracts semantic parameters and instantly matches her to the exact schemes she qualifies for (e.g. Mudra Loan, Stand-Up India). |
+| 1.2 | **PDF Policy Doc-Whisperer** | Converts a 30–40 page confusing government PDF into a clean visual panel: Green Eligibility Cards, Financial Pills (loan amount/interest rate), and red Alert Boxes for hidden rules/penalties. |
+| 1.3 | **Smart Document Pre-Flight Scanner & Progress Tracker** | Step-by-step Stepper UI checklist for required uploads, with automated canvas scanning that flags blurry/cut-off documents before a bank can reject them; sensitive IDs auto-redacted on the backend. |
+| 1.4 | **BizCalculus AI (Spreadsheet-Free Financial Planner)** | User chats her unit economics ("raw material costs ₹100, I sell for ₹300") and the AI auto-generates 3-year P&L and break-even charts — no Excel required. |
+| 1.5 | **🆕 Live Government Scheme Intelligence Panel** | Continuously syncs the exact live process, eligibility rules, required documents, and newly launched schemes directly from official government portals; renders them in the same card/pill/alert format, with a "What's New" ribbon so returning users always see the latest schemes and rule changes — and the Scheme Matcher (1.1) always runs against this live, current dataset rather than a static list. |
+
+---
+
+## 🧠 Pillar 2 — Mentorship Hub (Scale & Readiness)
+
+| # | Feature | What it does |
+|---|---|---|
+| 2.1 | **The AI Twin Mentor (24/7 Virtual Advisory)** | An AI agent modeled after real, successful women entrepreneurs/investors, trained on public case studies and scaling frameworks — available any time for execution questions (e.g. "how should I price my first SaaS product?"). |
+| 2.2 | **The AI Sandbox & Mock Bank/VC Interviewer** | Live voice simulation (Gemini Live API over WebRTC) of a skeptical bank officer or VC asking hard questions on risk, marketing spend, and operations; ends with a quantitative Readiness Score Matrix showing exactly where to improve. |
+| 2.3 | **Hyper-Matched 1-on-1 Human Escrow Mentorship** | Once the AI-assessed readiness score is high enough, unlocks scheduling with real human mentors via a Calendly-style integration; the mentor receives a pre-formatted, AI-vetted business brief so the 30-min call is pure high-level strategy. |
+
+---
+
+## 🤝 Pillar 3 — Networking Hub (Community & Co-founding)
+
+| # | Feature | What it does |
+|---|---|---|
+| 3.1 | **Skill-Based Swipe-to-Match for Co-founders** | Card-based swipe interface matching complementary skillsets (e.g. a technical BCA-student developer with a marketing-strong non-technical founder); a mutual match unlocks a direct collaborative chat space. |
+| 3.2 | **Hyper-Local Go-To-Market Ecosystem Blueprint** | Uses location metadata to show a local market overview and flag nearby non-competing businesses (e.g. a local raw-material supplier matched with a local boutique manufacturer) to encourage real-world B2B partnerships. |
+| 3.3 | **The Micro-Grant Community Ledger** | A live feed of short business pitches where established women in the network can back new projects with small amounts (₹500–₹10,000) of bridge capital via secure micro-payments, while formal bank loans are still processing — with a dynamically updating progress bar. |
+
+---
+
+## 🎨 Cross-Cutting UI/UX Behavior
+
+| Feature | What it does |
+|---|---|
+| **Dynamic Right AI Co-Pilot Panel** | Funding Hub → shows PDF Policy Checklist + application steps. Mentorship Hub → transforms into the Live Audio Visualizer Wave for mock interviews. Networking Hub → becomes the Skill Match Messenger and co-founder discovery card pile. |
+| **Consistent Visual Language** | The same card/pill/alert-box design system (green = eligible/good, red = alert/risk, blue pill = financial data) is reused across Scheme Matching, PDF analysis, and the new Live Government Scheme Panel, so the whole app feels like one product, not three bolted-together tools. |
+
+---
+
+## 📋 Total Feature Count: 15 features
+
+- **3** Core layer features (auth, profile, dashboard shell)
+- **5** Funding Hub features (including the new live scheme panel)
+- **3** Mentorship Hub features
+- **3** Networking Hub features
+- **1** Cross-cutting UI/UX system (dynamic co-pilot panel) tying it all together
+
+# SHEscale — Project Plan
+
+*A unified funding, mentorship, and networking ecosystem for female entrepreneurs*
+
+---
+
+## 1. What We Are Building
+
+**SHEscale** is a single, unified web workspace — not three disconnected apps — that takes a woman entrepreneur through the entire lifecycle of building a business:
+
+1. **Getting capital** (Funding Hub) — finding the right government scheme, understanding the paperwork, submitting clean applications, and planning finances.
+2. **Getting guidance** (Mentorship Hub) — practicing pitches, getting 24/7 AI coaching, and eventually earning access to real human mentors.
+3. **Getting community** (Networking Hub) — finding a co-founder, finding nearby non-competing businesses to partner with, and getting small emergency capital from other women in the network while bank loans are still processing.
+
+All three live inside one dashboard with a shared identity/profile layer, so the user never has to re-enter her business context three times.
+
+---
+
+## 2. Why We Are Building It
+
+**The core problem:** Government schemes like Mudra Loan and Stand-Up India exist specifically to fund women entrepreneurs — but almost no one uses them effectively because of three compounding failures:
+
+| Failure | Real-world effect |
+|---|---|
+| **Discovery failure** | Women don't know which of the 20+ overlapping schemes they actually qualify for. |
+| **Comprehension failure** | Scheme details live in 30–40 page government PDFs full of legal/financial jargon, so even eligible women give up or apply incorrectly. |
+| **Confidence failure** | Even with the money identified, most first-time founders have never faced a bank loan officer or VC and don't know how to defend their numbers — so they walk in underprepared and get rejected. |
+| **Isolation failure** | Solo founders have no technical co-founder, no peer network, and no bridge capital while formal loans are stuck in processing for weeks. |
+
+SHEscale exists to collapse all four failures into one guided, AI-assisted journey — turning a scattered, intimidating bureaucratic process into something as simple as a conversation.
+
+---
+
+## 3. Who It Is For
+
+| Persona | Situation | What SHEscale gives her |
+|---|---|---|
+| **The First-Time Founder** | Has a business idea (e.g. an organic boutique) but has never dealt with government paperwork or banks. | Plain-language scheme matching + PDF-Whisperer + document scanner so she doesn't get rejected on a technicality. |
+| **The Solo Technical/Business Builder** | Has half the skillset (e.g. a BCA student who can code, or a marketer with no product person). | Skill-based swipe-matching to find a complementary co-founder. |
+| **The Pitch-Anxious Applicant** | Has a solid plan but freezes up or under-prepares in front of a real bank/VC. | The AI Mock Interviewer + Readiness Score Matrix, so the *first* hard conversation happens with an AI, not the real loan officer. |
+| **The Cash-Gap Founder** | Loan is approved in principle but stuck in bank processing for 3–6 weeks with rent/inventory due now. | The Micro-Grant Community Ledger for small bridge capital from other women in the network. |
+| **The Scaling Founder** | Business is running, and now she's ready for real strategic help, not basic Q&A. | Unlocked access to vetted human mentors, arriving with a pre-formatted AI-vetted brief so the call is high-value from minute one. |
+
+---
+
+## 4. How We Are Building It
+
+**Architecture approach:** A single React-based dashboard, one core Node.js/Express backend, one shared MongoDB data layer (see the earlier schema-design prompt), with the Gemini API doing the heavy semantic/document/voice lifting across all three pillars rather than three separate AI stacks.
+
+**Core technical building blocks:**
+- **Semantic scheme matching** — natural language business description → Gemini extracts structured parameters → matched against a scheme eligibility ruleset.
+- **Document intelligence** — PDF parsing + structural prompting to turn dense legal text into scannable eligibility cards, financial terms, and red-flag alerts.
+- **Computer-vision-lite document QA** — canvas-based blur/crop detection on uploads before they ever reach a human reviewer.
+- **Conversational financial modeling** — natural language unit economics → auto-generated 3-year P&L and break-even visualizations.
+- **Voice AI simulation** — Gemini Live API over WebRTC for real-time mock bank/VC interviews, with a post-session scored readiness matrix.
+- **Matching algorithms** — skill-vector and location-tier matching for co-founders and nearby non-competing businesses.
+- **Community ledger** — a transactional micro-funding feed with live progress bars.
+
+**Design principle throughout:** every complex, intimidating process (a 40-page PDF, a bank interview, a financial model) gets converted into something visual, conversational, and immediate — never a form the user has to fill out cold.
+
+---
+
+## 5. 🆕 New Feature: Live Government Scheme Intelligence Panel
+
+**What it does:**
+Beyond just matching a user to a scheme she already asked about, SHEscale actively pulls and displays the **exact live process, eligibility guidelines, required documents, and newly launched schemes** directly from official government scheme portals (e.g. Jan Samarth, Startup India, Stand-Up India, Mudra Yojana, state MSME portals) — presented through the same clean, scannable UI as the PDF Doc-Whisperer, instead of sending the user away to read a government website.
+
+**Why it matters:**
+Government portals change scheme terms, launch new schemes, or update interest rates and deadlines with little notice — and most existing tools (including basic scheme matchers) go stale. This feature keeps SHEscale as a *living*, always-current source of truth, not a one-time database snapshot, so users never miss a newly launched scheme they'd qualify for.
+
+**How it works:**
+1. A backend scheduled job periodically fetches/refreshes structured data from official government scheme sources (name, eligibility, required documents, interest rate, deadlines, application steps).
+2. Each refreshed scheme is passed through the same Gemini structural-extraction pipeline used in the PDF Doc-Whisperer, so it lands in the same clean visual format: **Green Eligibility Cards**, **Financial Pills**, and **Alert Boxes** for new rules or deadline changes.
+3. A **"What's New"** ribbon/section on the Funding Hub dashboard surfaces newly added or recently updated schemes first, so returning users immediately see what changed since their last visit.
+4. Each scheme card includes a **live step-by-step application guideline** (the real government process, not a paraphrase) rendered as the same Stepper UI already used for the user's own document tracker — so she can preview the *entire* real-world process before she even starts.
+5. This feed directly powers the Conversational Scheme Matcher (Feature 1.1) — matching is always run against the current live scheme set, not a fixed list, so the AI never recommends an outdated or discontinued scheme.
+
+**UI/UX treatment (kept consistent with the platform's existing visual language):**
+- Same card-based, color-coded system as the PDF Doc-Whisperer (green = eligible, red = alert/deadline, blue pill = financial terms) so this feels like a native part of the Funding Hub, not a bolted-on news feed.
+- A subtle "last synced" timestamp per scheme card builds trust that the data is current.
+- New/updated schemes get a small non-intrusive badge (not a disruptive popup) — respecting the calm, guided tone of the rest of the dashboard.
+- Filter/sort controls (by state, business type, loan size) so the live feed doesn't overwhelm a first-time visitor.
+
+---
+
+## 6. Suggested Phased Rollout
+
+| Phase | Focus |
+|---|---|
+| **Phase 1 — MVP** | Auth/Profile, Conversational Scheme Matcher, PDF Doc-Whisperer, basic Document Tracker |
+| **Phase 2** | Live Government Scheme Intelligence Panel, BizCalculus Financial Planner |
+| **Phase 3** | AI Twin Mentor, AI Mock Interviewer + Readiness Score |
+| **Phase 4** | Human Mentor Booking, Co-founder Swipe-Matching |
+| **Phase 5** | Hyper-Local Ecosystem Blueprint, Micro-Grant Community Ledger |
+
+This sequencing front-loads the features that solve the most urgent failure (discovery + comprehension of funding) before layering in mentorship and community, which matter more once a founder already has capital clarity.

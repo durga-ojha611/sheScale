@@ -1,0 +1,145 @@
+# SHEscale — Smart Scheme Matcher & Loan Application Generator (Analyzed & Enhanced Prompt)
+
+> **Purpose of this document:** Your uploaded PDF was a solid standalone feature prompt, but it was written as if this feature exists in isolation. Since it's actually going INTO SHEscale, I analyzed it against your already-built database, backend structure, and frontend design system — and rewrote it so it plugs into what already exists instead of duplicating it.
+
+---
+
+## 🔍 Analysis — What Needed Fixing Before This Goes to the AI
+
+| Issue in the original PDF | Why it's a problem for SHEscale | Fix applied below |
+|---|---|---|
+| Proposes new **`Scheme`** and **`UserApplication`** Mongoose models | You already have `GovernmentScheme.model.js` and `FundingApplication.model.js` in `models/`. Creating new ones duplicates data and breaks the single-source-of-truth RAG pipeline you already built for the Live Government Scheme Panel. | Reuse the **existing** `GovernmentScheme` and `FundingApplication` models — extend fields only if truly missing, don't fork new collections. |
+| Proposes a **local `faiss-node` vector DB queried directly inside the controller** | Violates your own backend rule: controllers only orchestrate, business logic lives in `services/`. Also duplicates the RAG retrieval logic you already spec'd in `services/ragRetrievalService.js`. | Fold the similarity search into the **existing** `ragRetrievalService.js` (faiss-node as its retrieval engine), called from the controller — not built as a one-off. |
+| No mention of the **shared Gemini service wrapper** | Original prompt calls the Gemini API directly from the route logic. You already spec'd a single `services/geminiService.js` for every Gemini call across the app. | Route both the scheme-matching call and the loan-application-generation call through `geminiService.js`. |
+| UI styled with generic Tailwind, no color system referenced | You already locked in a white + `#F50A70` design token system for the entire platform. A feature built without referencing it will visually clash with everything else. | Explicitly bind every component to the existing design tokens, not raw Tailwind defaults. |
+| No loading/empty/error state requirement | You already made this a hard rule for the whole frontend (no mocked data, real states only). The original prompt only mentions a spinner for the scan button. | Extend real loading/empty/error states to all 3 components, not just the input. |
+| Component names (`IdeaInput`, `SchemeCards`, `ApplicationDraft`) exist in a vacuum | Your frontend prompt already named this feature's parent screen `SchemeMatcher.jsx`. These 3 components should nest under it, not float as a separate untethered feature. | Explicitly structure them as children of the existing `SchemeMatcher.jsx` screen. |
+| "At least 3 schemes" is a hardcoded minimum | Your Live Government Scheme Intelligence Panel already keeps `GovernmentScheme` current — the match count should be however many genuinely qualify, not artificially padded to hit 3. | Loosen this to "as many as genuinely match, ranked by relevance" with 3 as a typical/expected range, not a forced floor. |
+
+---
+
+## 🧩 Enhanced Master Prompt (paste this to the AI)
+
+```
+ROLE: Expert Full-Stack Developer and UI/UX Architect working inside the existing
+SHEscale codebase — NOT a standalone feature. You already have full context of the
+SHEscale architecture spec, the existing backend folder structure, the existing
+Mongoose models, and the existing white + #F50A70 frontend design system.
+
+TASK: Build the "Smart Scheme Matcher & Loan Application Generator" as an extension
+of the already-planned Funding Hub Scheme Matcher feature (Feature 1.1 in the spec) —
+do not create a parallel/duplicate feature.
+
+TECH STACK: React.js (frontend), Node.js + Express (backend, ES6 `import` only, no
+`require()`), MongoDB + Mongoose (already-built models), Gemini API via the existing
+shared `services/geminiService.js`, faiss-node as the retrieval engine inside the
+existing `services/ragRetrievalService.js`.
+
+OBJECTIVE: A user describes their business idea, triggers a scan, and the system
+returns the genuinely matching government/financial schemes (ranked, typically 3+,
+never artificially padded) with pros/cons per scheme, then generates a tailored,
+formal loan application for any scheme she selects.
+
+────────────────────────────────────────
+1. DATA LAYER — REUSE, DON'T DUPLICATE
+────────────────────────────────────────
+- Use the EXISTING `GovernmentScheme` model as the source of truth for scheme data
+  (already kept current by the Live Government Scheme sync job). Only add new fields
+  to it if something here is genuinely missing (e.g. a `prosConsSummary` field) —
+  do not create a separate `Scheme` collection.
+- Use the EXISTING `FundingApplication` model to store generated loan applications
+  (add fields for `generatedApplicationText`, `status: ["draft","submitted"]` if not
+  already present) — do not create a separate `UserApplication` collection.
+- Every schema change must be additive and backward-compatible with what's already
+  wired to the Live Government Scheme Panel and RAG pipeline.
+
+────────────────────────────────────────
+2. BACKEND — FOLD INTO THE EXISTING SERVICE LAYER
+────────────────────────────────────────
+Route: POST /api/schemes/scan
+  - Controller validates input only, then calls `ragRetrievalService.retrieveMatches()`.
+  - Inside `ragRetrievalService.js`: use faiss-node to run similarity search against
+    the vectorized `GovernmentScheme` corpus, return the top genuinely relevant
+    matches (not a forced count).
+  - Pass the retrieved context + user's business idea into `geminiService.js`,
+    which formats the final response as strict JSON: scheme name, badge, pros[],
+    cons[], matchScore.
+  - Response: JSON array, length = however many real matches, sorted by matchScore.
+
+Route: POST /api/schemes/generate-application
+  - Accepts `schemeId` + `businessIdeaText`.
+  - Controller calls a new `fundingService.generateApplication()` function, which
+    builds a scheme-specific prompt and calls `geminiService.js` (same shared
+    wrapper, not a separate direct API call).
+  - Persists the result to the EXISTING `FundingApplication` document for that user
+    (create if none exists for this scheme, update otherwise).
+  - Response: the generated application text + the saved application's ID.
+
+Keep both routes thin — all prompt construction, retrieval logic, and formatting
+lives in services, matching the rest of the SHEscale backend.
+
+────────────────────────────────────────
+3. FRONTEND — NEST UNDER THE EXISTING SCHEMEMATCHER SCREEN
+────────────────────────────────────────
+This feature lives INSIDE the already-planned `SchemeMatcher.jsx` screen in the
+Funding Hub, built from these child components:
+
+- `IdeaInput.jsx`
+  - Spacious textarea + optional "attach business plan" selector + a primary CTA
+    styled with the #F50A70 accent token (`--accent`), not a raw Tailwind color.
+  - Real loading state (skeleton, not spinner-only) while the scan request is in flight.
+  - Real empty state copy if the user hasn't scanned yet, real error state if the
+    API call fails — no fake "no data" placeholder.
+
+- `SchemeCards.jsx`
+  - Renders one card per REAL match returned by the API (not a hardcoded 3) —
+    ranked by matchScore, badge for the scheme name.
+  - Pros/cons rendered with the same green-check / red-alert visual language
+    already used in the PDF Doc-Whisperer, for platform-wide consistency —
+    not a one-off icon set.
+  - "Generate Loan Application" button per card, disabled + loading state while
+    that specific card's generation request is in flight (don't lock the whole screen).
+
+- `ApplicationDraft.jsx`
+  - Modal/side-drawer showing the real generated text once the API responds.
+  - "Save to Dashboard" persists to the real FundingApplication record (already
+    done server-side on generation — this button can just confirm/navigate).
+  - "Download PDF" triggers a real PDF export of the generated text.
+
+All three components pull colors, spacing, and type scale from the SAME design
+token file already defined for the rest of SHEscale — do not redefine styles locally.
+
+────────────────────────────────────────
+4. CODE QUALITY
+────────────────────────────────────────
+- ES6 `import` syntax only, across frontend and backend.
+- Centralized `asyncHandler` + shared error-handling middleware — no repeated
+  try/catch blocks per controller.
+- Use the existing centralized API client (`services/api.js`) on the frontend —
+  no inline fetch calls inside components.
+- No mocked/sample data anywhere — every state (loading/empty/error/success) must
+  reflect a real API response.
+
+────────────────────────────────────────
+5. OUTPUT FORMAT
+────────────────────────────────────────
+Output in this order: (1) any additive schema changes to the existing models,
+(2) the two backend routes + their controllers, (3) the service functions inside
+ragRetrievalService.js, geminiService.js, and fundingService.js, (4) the three
+frontend components, (5) a short note confirming no new/duplicate collections
+were created and the design tokens were reused, not redefined.
+```
+
+---
+
+## ✅ Final Instruction to Append
+
+```
+Before finalizing, confirm explicitly:
+- No duplicate Mongoose models were created — GovernmentScheme and FundingApplication
+  were extended, not forked.
+- The faiss-node retrieval logic lives inside ragRetrievalService.js, not inline in a route.
+- Every Gemini call goes through the shared geminiService.js.
+- SchemeCards renders a real, variable-length match list — not a hardcoded 3.
+- All UI colors reference the existing white + #F50A70 design tokens.
+```

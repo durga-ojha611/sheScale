@@ -1,0 +1,153 @@
+
+# Master UI/UX Structure & Architecture Prompt
+### Women Founders Funding Ecosystem — "Cake.me Structure × Purple/White Formal Theme"
+
+---
+
+## 0. Non-Negotiable Rules
+
+1. **Clean, Optimized, Clear Code** — Component-per-file, no inline style objects for repeated patterns (use Tailwind utility classes / `@apply` for repeated combos), no unused props, no prop-drilling beyond 2 levels (use Context where needed). Every component under ~150 lines — split into subcomponents past that.
+2. **Motion & Component Libraries** — Use **Framer Motion** (`motion/react`) for all animation (page transitions, hover states, layout animations via `layoutId`). Pull polished, accessible primitives from **21st.dev** component patterns (cards, buttons, nav, forms) and **Motion (motion.dev)** examples for micro-interactions — adapt them into the purple/white system below, don't reuse their default color schemes.
+3. **Structural inspiration from Cake.me, not its palette** — Borrow Cake.me's information architecture: sticky top nav with product-style routing, generous whitespace, large confident hero with a single clear primary CTA, step-indicator patterns (Step 1 / Step 2 / Step 3) for multi-stage flows (mirrors our Funding Checklist), a two-panel "input → live report" layout (mirrors BizCalculus / Doc Whisperer), and a circular score/progress ring (mirrors our Readiness Score). Re-skin all of it in the Deep Royal Purple + White formal palette defined below — never copy Cake.me's green/mint branding.
+4. **One design system, enforced everywhere** — All colors, fonts, radii, and shadows come from a single `tailwind.config.js` theme extension + CSS variables. No component may hardcode a hex value.
+5. **Every screen has 3 states minimum** — loading, empty/default, and populated/error — designed up front, not patched in later.
+6. **Responsive-first** — Every layout designed mobile → tablet → desktop, sidebar patterns collapse to a bottom sheet or drawer on mobile, never just "shrink and hope."
+
+---
+
+## 1. Design System & Theming
+
+### Color Palette
+| Token | Hex | Usage |
+|---|---|---|
+| `--bg-primary` | `#FFFFFF` | Page background |
+| `--brand-primary` | `#4C1D95` (Deep Royal Purple) | Headers, active nav states, solid buttons |
+| `--accent` | `#6366F1` (Electric Indigo) | Hover states, links, Framer Motion highlight moments |
+| `--surface` | `#FAF5FF` (Ghost White/Lavender) | Card backgrounds, subtle section dividers |
+| `--dark-section` | `#2E1065` | About page hero, footer, contrast sections |
+| `--text-primary` | `#1E1B2E` | Body copy on light backgrounds |
+| `--success` | `#16A34A` | Readiness score > 80, completed checklist items |
+| `--warning` | `#EA580C` | Readiness score < 80, incomplete items |
+
+### Typography
+- **Headings:** Playfair Display or Merriweather — set at `font-bold`/`font-semibold`, generous letter-spacing on hero text for the "formal old-aesthetic" feel.
+- **Body/UI:** Inter or Geist — used for all forms, tables, nav, buttons, dashboard copy.
+- Type scale: `text-5xl/6xl` hero → `text-3xl` section headers → `text-base` body → `text-sm` meta/labels.
+
+### Motion Tokens (Framer Motion)
+- **Page transition:** `initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:0.4,ease:"easeOut"}}`
+- **Card hover:** `whileHover={{scale:1.02}}` + `shadow-lg` transition
+- **Nav underline:** shared `layoutId="navUnderline"` for the animated active-link indicator
+- **Progress ring / checklist bar:** animate `strokeDashoffset` / width on mount and on value change, not instantly snapping
+
+---
+
+## 2. Global Navigation (Navbar)
+
+Sticky, glassmorphism header (`backdrop-blur-md bg-white/80 border-b border-purple-100`) present on every page — this is the central routing hub, same principle as Cake.me's persistent product nav.
+
+- **Left:** Logo → router push to `/`
+- **Center:** Home · About · Funding · Mentorship · Networking — animated `layoutId` underline on hover/active
+- **Right:** unauthenticated → Login (ghost button) + Sign Up (solid purple button); authenticated (JWT in context) → Profile avatar dropdown (Overview / Settings / Logout)
+- Mobile: collapses into a slide-in drawer (Framer Motion `x` translate), hamburger icon, same link set stacked vertically
+
+---
+
+## 3. Page-by-Page UI/UX Structure
+
+### A. Landing Page (`/`)
+- **Hero:** White background, subtle slow-moving purple mesh-gradient blob (CSS/SVG, animated via Framer Motion `x`/`y` loop), bold Playfair headline, single primary CTA → Sign Up, secondary ghost CTA → Funding. Modeled on Cake.me's hero confidence: one headline, one sub-line, one button, no clutter.
+- **Value Proposition:** 3-column responsive grid (`grid-cols-1 md:grid-cols-3`) — Funding / Mentorship / Networking, each a card with a Lucide icon, short label, one-line description, subtle hover lift.
+
+### B. About Page (`/about`)
+- **Hero container:** Dark theme (`bg-[#2e1065]`), white text.
+  - Headline: **"Empowering Women Founders. Engineering Financial Success."** — accent word(s) in Electric Indigo.
+  - Sub-headline: "We are an AI-driven ecosystem..."
+- **The Ecosystem grid:** `grid-cols-1 md:grid-cols-2`, white cards with subtle purple borders, one per module:
+  - Intelligent Scheme Matcher — `<Target/>`
+  - BizCalculus — `<Calculator/>`
+  - Doc Whisperer — `<FileCheck/>`
+  - Gamified Mentorship Hub — `<Trophy/>`
+- **Tech Stack section:** Frosted glass card (`backdrop-blur-md bg-white/10 border border-white/20`) over the dark purple background, listing React, Node.js, MongoDB, FAISS with small logo chips.
+
+### C. Core Feature Workspaces — Sidebar + Main Content Dashboard Layout
+Same structural DNA across all three (consistency > novelty here):
+
+- **Funding (`/funding`):** Left sidebar = filters (Grant/Loan, Scheme type); Main area = masonry grid of Scheme Cards (CGTMSE, Mudra, etc.) each with a prominent "Apply / Check Eligibility" button. This mirrors Cake.me's report-generation layout — filters/input on one side, results on the other.
+- **Mentorship (`/mentorship`):** Top = large Mock Pitch Simulator CTA (Cake.me-style hero-inside-a-page pattern); Main area = Readiness Score Matrix (Recharts radar chart, directly inspired by Cake.me's skill-radar visualization) + list of AI/Human mentors below.
+- **Networking (`/networking`):** Feed-style directory layout — search bar top, list of peer/expert cards below with `<UserPlus/>` connect buttons.
+
+### D. Two-Panel "Input → Live Report" Pattern (Doc Whisperer / BizCalculus / Scheme Matcher)
+Directly modeled on Cake.me's AI Resume Checker screen (input form left, structured animated report right):
+- **Left panel:** the input mechanism (idea textarea, PDF dropzone, or business details) with a numbered step indicator (`① Upload`, `② Add context`) exactly like Cake.me's Step 1/2/3 flow.
+- **Right panel:** a live-updating structured report — score ring, category breakdown bars, highlight/improvement call-out boxes — populated via Framer Motion stagger animation as sections resolve, never a blank wait state.
+
+---
+
+## 4. Profile Dashboard — Technical Architecture
+
+### Folder Structure
+```
+/src
+ ├── /components
+ │    ├── /profile
+ │    │    ├── ProfileLayout.jsx
+ │    │    ├── DashboardOverview.jsx
+ │    │    └── SecuritySettings.jsx
+ ├── /routes
+ │    ├── profile.js
+ │    └── settings.js
+ ├── /models
+ │    └── User.js
+```
+
+### Frontend Components
+**`ProfileLayout.jsx`** — Sidebar wrapper (Overview / Settings / Logout tabs) + right content outlet. Logout clears token from context (never read auth state directly from `localStorage` in components — always through `AuthContext`), redirects via `useNavigate('/login')`. Logout button styled `text-red-600 hover:bg-red-50`.
+
+**`DashboardOverview.jsx`**
+- Progress Cards: Checklist Progress (circular ring, e.g. 3/4) + Readiness Score (green if >80, orange if <80).
+- Edit Details form: `name`, `category` (select), `businessIdea` (textarea) — controlled inputs, `isLoading` disables submit + shows spinner, toast on success/error. `PUT /api/user/details`.
+
+**`SecuritySettings.jsx`**
+- Update Email form with server-side uniqueness check.
+- Update Password form: `currentPassword`, `newPassword`, `confirmNewPassword` — client-side blocks submission if `newPassword !== confirmNewPassword` before any network call.
+
+### Backend Routes
+
+**`routes/profile.js`**
+- `GET /api/user/me` — JWT-guarded, `User.findById(req.user.id).select('-password')`, returns `name, email, businessDetails, checklistProgress, mentorshipHub`.
+- `PUT /api/user/details` — updates `businessDetails.businessIdea` / `businessDetails.category` / `name` via `findByIdAndUpdate` with `{ new: true, runValidators: true }`.
+
+**`routes/settings.js`**
+- `PUT /api/user/settings/email` — checks `User.findOne({email})`, returns `400` if taken, else updates.
+- `PUT /api/user/settings/password` — 1) find user, 2) `bcrypt.compare(currentPassword, user.password)` → `401` if false, 3) `bcrypt.genSalt(10)`, 4) `bcrypt.hash(newPassword, salt)`, 5) save, return `200`.
+
+### Database Schema (`models/User.js`)
+```javascript
+const mongoose = require('mongoose');
+
+const UserSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true }, // bcrypt hashed
+  businessDetails: {
+    businessIdea: { type: String, default: '' },
+    category: { type: String, default: '' }
+  },
+  checklistProgress: {
+    completedSteps: { type: Number, default: 0 },
+    totalSteps: { type: Number, default: 4 }
+  },
+  mentorshipHub: {
+    readinessScore: { type: Number, default: 0 }
+  }
+}, { timestamps: true });
+
+module.exports = mongoose.model('User', UserSchema);
+```
+
+---
+
+## 5. Definition of Done for the UI/UX Layer
+
+A screen is done only when: it uses exclusively design-system tokens (no hardcoded hex/px outside the config), it has all 3 states (loading/empty/populated) built, its motion follows the tokens in §1, and — on both mobile and desktop — it visually reads as "formal, purple-and-white, Cake.me-structured," not as a generic Tailwind template.

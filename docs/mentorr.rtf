@@ -1,0 +1,268 @@
+You are an expert Node.js backend engineer working on an existing production-level hackathon project called **SheScale AI**.
+
+⚠️ CRITICAL RULES:
+
+* DO NOT modify, break, or refactor any existing backend files or logic.
+* ONLY ADD new modules, routes, and services in a modular way.
+* Follow existing project structure and coding style.
+* Ensure all new features are plug-and-play and isolated.
+* Use clean, scalable folder structure.
+
+---
+
+# 🎯 OBJECTIVE
+
+Implement backend features for **Mentorship Hub** and **Networking Hub**.
+
+These features must integrate with the existing architecture:
+
+* Node.js + Express backend
+* Gemini API (for AI analysis)
+* JSON / MongoDB (for storage)
+* Structured JSON responses (VERY IMPORTANT)
+
+---
+
+# 🧠 PART 1: MENTORSHIP FEATURES
+
+## 1. AI PITCH ANALYZER API
+
+### Endpoint:
+
+POST /api/mentorship/analyze-pitch
+
+### Input:
+
+{
+"pitchText": "string",
+"userId": "string (optional)"
+}
+
+### Logic:
+
+* Send pitchText to Gemini API
+* Use structured prompt to evaluate:
+
+  * clarity
+  * business model
+  * market understanding
+  * funding readiness
+
+### Output (STRICT JSON):
+
+{
+"pitchScore": number (0-100),
+"clarityScore": number,
+"marketScore": number,
+"strengths": [string],
+"weaknesses": [string],
+"suggestions": [string],
+"fundingReadiness": "Low | Medium | High"
+}
+
+---
+
+## 2. READINESS SCORE ENGINE
+
+### Endpoint:
+
+GET /api/mentorship/readiness/:userId
+
+### Logic:
+
+* Combine:
+
+  * latest pitch analysis
+  * user profile data (if exists)
+* Return computed readiness score
+
+### Output:
+
+{
+"overallScore": number,
+"breakdown": {
+"ideaClarity": number,
+"financialReadiness": number,
+"riskLevel": number
+}
+}
+
+---
+
+## 3. MENTOR SUGGESTION ENGINE
+
+### Endpoint:
+
+POST /api/mentorship/suggest-mentors
+
+### Input:
+
+{
+"domain": "string",
+"location": "string"
+}
+
+### Logic:
+
+* Use static dataset (JSON file) for MVP
+* Match mentors based on domain + location
+
+### Output:
+
+{
+"recommendedMentors": [
+{
+"name": "string",
+"expertise": "string",
+"location": "string"
+}
+]
+}
+
+---
+
+# 🤝 PART 2: NETWORKING FEATURES
+
+## 1. PITCH FEED SYSTEM
+
+### Endpoint 1:
+
+POST /api/networking/create-pitch
+
+Input:
+{
+"userId": "string",
+"title": "string",
+"problem": "string",
+"solution": "string",
+"budget": number,
+"stage": "idea | prototype | revenue"
+}
+
+Store in:
+
+* MongoDB OR local JSON file
+
+---
+
+### Endpoint 2:
+
+GET /api/networking/pitches
+
+Return all pitches in structured format:
+{
+"pitches": [
+{
+"id": "string",
+"title": "string",
+"problem": "string",
+"solution": "string",
+"budget": number,
+"stage": "string",
+"createdAt": "timestamp"
+}
+]
+}
+
+---
+
+## 2. CO-FOUNDER MATCH SYSTEM
+
+### Endpoint:
+
+POST /api/networking/match
+
+Input:
+{
+"skills": ["string"],
+"needs": ["string"]
+}
+
+### Logic:
+
+* Use simple matching algorithm:
+
+  * match complementary skills
+* Use static dataset or stored users
+
+### Output:
+
+{
+"matches": [
+{
+"userId": "string",
+"skills": ["string"],
+"matchScore": number
+}
+]
+}
+
+---
+
+## 3. AI RECOMMENDED CONNECTIONS
+
+### Endpoint:
+
+GET /api/networking/recommend/:userId
+
+### Logic:
+
+* Use:
+
+  * user profile
+  * pitch domain
+* Return best matches
+
+---
+
+# 🧩 PART 3: GEMINI PROMPT (IMPORTANT)
+
+For pitch analysis, use this structured system prompt:
+
+"Analyze the startup pitch and return ONLY valid JSON with:
+
+* pitchScore (0-100)
+* clarityScore
+* marketScore
+* strengths (array)
+* weaknesses (array)
+* suggestions (array)
+* fundingReadiness (Low/Medium/High)
+
+Do NOT return explanation text."
+
+---
+
+# 📁 FILE STRUCTURE (FOLLOW THIS)
+
+Create new folders only:
+
+* /routes/mentorship.routes.js
+* /routes/networking.routes.js
+* /controllers/mentorship.controller.js
+* /controllers/networking.controller.js
+* /services/ai.service.js
+* /services/match.service.js
+* /data/mentors.json
+
+---
+
+# 🔐 FINAL REQUIREMENTS
+
+* All APIs must return structured JSON only
+* Handle errors properly
+* Keep code clean and modular
+* Do NOT modify existing routes or controllers
+* Ensure easy frontend integration
+
+---
+
+# 🚀 BONUS (IF POSSIBLE)
+
+* Add basic validation (Joi or manual)
+* Add timestamps to stored data
+* Add simple scoring logic for matches
+
+---
+
+Deliver complete working backend code for these features.

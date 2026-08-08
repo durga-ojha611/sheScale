@@ -1,0 +1,153 @@
+# SHEscale — Frontend Build Prompt
+
+> **Purpose of this document:** A *prompt* to hand to an AI coding assistant (or frontend engineer) to build the actual SHEscale website frontend, wired live to the existing backend/database. This is not the code itself — it is the instruction set that produces it.
+
+---
+
+## 🎯 Context to Give the AI
+
+```
+You are a senior frontend engineer and UI/UX design lead building the SHEscale
+website — a unified 3-pillar dashboard for female entrepreneurs (Funding Hub,
+Mentorship Hub, Networking Hub) plus a shared auth/profile layer.
+
+The backend is ALREADY BUILT and live, following the SHEscale architecture spec
+and backend structure you already have context on:
+- Auth: signup/login/JWT-protected routes
+- Funding Hub APIs: Conversational Scheme Matcher (RAG-grounded), PDF Doc-Whisperer,
+  Document Pre-Flight Scanner/Tracker, BizCalculus Financial Planner, Live
+  Government Scheme Intelligence Panel (GET /api/schemes/match and related endpoints)
+- Mentorship Hub APIs: AI Twin Mentor chat, AI Mock Bank/VC Interview (Gemini Live
+  over WebRTC) + Readiness Score Matrix, Human Mentor Booking
+- Networking Hub APIs: Skill-Based Swipe-to-Match, Hyper-Local Business Discovery,
+  Micro-Grant Community Ledger
+
+Your job right now is ONLY the frontend — build the complete website UI/UX and
+connect every screen to these real backend endpoints. Do not build or modify
+backend code in this pass.
+```
+
+---
+
+## 🧩 Master Instruction (paste this to the AI)
+
+```
+Build the full SHEscale frontend as a professional, production-grade website.
+Follow these rules strictly:
+
+1. NO MOCKED DATA, ANYWHERE:
+   - Every screen must call the real backend API and render the actual response.
+   - Use a single centralized API client/service layer (e.g. `services/api.js` with
+     axios or fetch, base URL from an env variable) — no component should hardcode
+     a fetch URL or inline sample JSON.
+   - Every list, card, chart, or panel must have three real states wired to the
+     actual request lifecycle: loading (skeleton/spinner), empty (real "no data yet"
+     state, not a fake placeholder), and error (real error message from the API,
+     not a generic fallback).
+   - Auth token must be attached to every protected request and refreshed/redirected
+     to login on 401, using the real auth endpoints — not a simulated logged-in state.
+
+2. DESIGN SYSTEM — must be professional and instantly recognizable:
+   - Core palette: white (#FFFFFF) as the dominant background/canvas color, and
+     #F50A70 (magenta/pink) as the single primary accent — used deliberately for
+     primary actions, active states, key data highlights, and the brand signature.
+     Do not overuse the accent; let white space and a neutral gray scale
+     (for borders, secondary text, dividers) carry most of the interface so the
+     accent stays high-impact.
+   - Define this as an actual design token system before writing any component:
+     background, surface, primary accent, accent-hover, text-primary, text-secondary,
+     border, success, warning/alert — each as a named CSS variable, not a hardcoded
+     hex scattered through components.
+   - Typography: pick one clean display/heading typeface and one highly readable
+     body typeface, with a defined type scale (h1–h6, body, caption) — avoid default
+     browser font stacking. Keep it professional/fintech-appropriate, not playful.
+   - Layout: the single unified dashboard shell described in the architecture —
+     a persistent left/top navigation for the 3 pillars, a Center Canvas that swaps
+     per pillar, and a Right AI Co-Pilot Panel that dynamically reconfigures itself
+     per active pillar (Funding → scheme checklist, Mentorship → live audio
+     visualizer, Networking → match messenger).
+   - Every screen must be responsive down to mobile, with visible keyboard focus
+     states and respect for reduced-motion preferences.
+   - Avoid generic templated AI-design defaults (no default cream/serif/terracotta
+     look, no unmotivated numbered-step markers, no decorative animation that
+     doesn't serve a real interaction) — this needs to look like a funded fintech
+     product, not a demo.
+
+3. COVER EVERY BACKEND FEATURE WITH A REAL, CONNECTED SCREEN:
+   - Auth: real Signup, Login, and protected route guarding (redirect if no valid
+     session), backed by the real auth endpoints.
+   - Profile: a real profile view/edit screen reading and writing to the real
+     Profile/User data.
+   - Funding Hub:
+     a) Conversational Scheme Matcher screen — real text/voice input, calls the
+        real RAG-grounded matching endpoint, renders actual matched schemes.
+     b) PDF Doc-Whisperer screen — real file upload, renders the real parsed
+        eligibility cards / financial pills / alert boxes returned by the API.
+     c) Document Pre-Flight Scanner & Tracker — real Stepper UI bound to real
+        upload/scan status per document, from the real tracker endpoint.
+     d) BizCalculus Financial Planner — real chat-style input for unit economics,
+        renders real generated P&L / break-even chart data from the API (use a
+        charting library fed by live API response, not static sample data).
+     e) Live Government Scheme Intelligence Panel — real "What's New" feed reading
+        from the live scheme sync endpoint, with real last-synced timestamps and
+        real filter/sort controls (state, business type, loan size).
+   - Mentorship Hub:
+     a) AI Twin Mentor chat screen — real chat UI wired to the real chat endpoint
+        and message history.
+     b) AI Mock Bank/VC Interviewer — real live audio session UI (connecting to
+        the real WebRTC/Live API session) with a real Readiness Score Matrix
+        rendered from the real scored response after the session ends.
+     c) Human Mentor Booking — real scheduling UI pulling real mentor availability
+        and creating real bookings through the real booking endpoint.
+   - Networking Hub:
+     a) Skill-Based Swipe-to-Match — real swipeable card deck pulling real candidate
+        profiles, posting real swipe actions, and opening a real chat on mutual match.
+     b) Hyper-Local Ecosystem Blueprint — real map/list view of nearby businesses
+        from the real location-based endpoint.
+     c) Micro-Grant Community Ledger — real live pitch feed, real pledge/payment
+        action wired to the real ledger endpoint, real dynamically updating
+        progress bar reflecting actual funded amount.
+
+4. STATE & DATA MANAGEMENT:
+   - Use a proper data-fetching layer (e.g. React Query/TanStack Query or SWR) for
+     caching, refetching, and loading/error states — do not hand-roll fetch +
+     useState + useEffect everywhere.
+   - Keep global state (auth/session, active pillar, profile) in a single lightweight
+     store — avoid prop-drilling across the 3 pillars.
+
+5. CODE QUALITY:
+   - Component-per-file, clear naming matching the feature list (e.g.
+     `SchemeMatcher.jsx`, `DocWhispererPanel.jsx`, `ReadinessScoreMatrix.jsx`).
+   - Shared UI primitives (Button, Card, Badge, Modal, Skeleton) in a `components/ui/`
+     folder using the design tokens from step 2 — no one-off inline styling that
+     duplicates a primitive that should exist.
+   - Use ES6 `import` syntax throughout, consistent with the backend.
+
+6. OUTPUT FORMAT:
+   - First output the design token system (colors, type scale, spacing) as its own
+     code block.
+   - Then output the full folder/file structure.
+   - Then generate each file, grouped: design tokens/theme → shared UI primitives →
+     layout shell (nav + co-pilot panel) → auth screens → each pillar's screens in
+     the order listed above → API/service layer wiring each screen to its real
+     endpoint.
+```
+
+---
+
+## ✅ Final Instruction to Append
+
+```
+Confirm at the end that:
+- Every one of the 15 features from the architecture spec has a real, connected
+  screen — list them and check each one off.
+- No component contains hardcoded sample/mock data.
+- The white + #F50A70 palette is defined once as design tokens and reused
+  everywhere, not redefined per component.
+- Every screen has real loading, empty, and error states tied to actual API calls.
+```
+
+---
+
+### How to use this prompt
+Paste the **Context** block + **Master Instruction** + **Final Instruction** into your AI coding assistant (or Claude Code) in one message. It already has the architecture spec and backend structure in context, so it can generate the full frontend — design system, layout shell, and all 15 feature screens — wired live to your real backend in one pass.

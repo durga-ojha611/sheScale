@@ -1,0 +1,141 @@
+# Master Full-Stack Prompt v2.0: Women Founders Funding Ecosystem
+### End-to-End Architecture — Scheme Matcher · Application Generator · Doc Whisperer · BizCalculus
+
+---
+
+## 0. Non-Negotiable Engineering Rules
+
+These rules apply to **every file, every module, every API route** generated for this project. Do not deviate.
+
+1. **Optimized Code** — No redundant re-renders, no N+1 DB queries, no blocking synchronous I/O on the server. Use memoization (`useMemo`/`useCallback`) on the frontend where recalculation is expensive. Use `.lean()` on read-only Mongoose queries. Batch/parallelize independent async calls with `Promise.all`.
+2. **Structured Code** — Strict separation of concerns: `routes/ → controllers/ → services/ → models/` on backend; `components/ → hooks/ → services(api)/ → context/` on frontend. No business logic inside route files. No API calls inside JSX — always via a service/hook layer.
+3. **Modern, Clean UI/UX** — Tailwind CSS with a consistent design token set (spacing, radius, color scale). Every async action has a loading state, a success state, and an error state. Every form has inline validation feedback. Mobile-first responsive layout. Accessible (proper labels, focus states, ARIA where needed).
+4. **Full Stack Wiring Integrity** — Every frontend action must map to a real, tested backend route, which must map to a real Mongoose schema field. No mock data left behind in production components. Environment variables (`GEMINI_API_KEY`, `MONGO_URI`, `JWT_SECRET`) must be centralized in a `.env` + `config/` loader, never hardcoded.
+5. **Error Handling & Resilience** — Every API route wrapped in try/catch with a centralized Express error-handling middleware. Every external call (Gemini API, PDF parsing) has a timeout + fallback message so the UI never hangs silently.
+6. **Security Basics** — Multer file uploads restricted to PDF mime-type + max size (5MB). Sanitize all user text before sending to Gemini prompts (prevent prompt injection). JWT-based auth guarding all `/api/*` routes except public ones.
+
+---
+
+## 1. Role & Task
+
+**Role:** Senior Full-Stack Architect & AI Systems Engineer
+**Task:** Build, end-to-end, a production-grade funding-assistance platform for women entrepreneurs consisting of four integrated modules — Funding Checklist, Context-Aware Scheme Matcher, Loan Application Generator, Doc Whisperer, and BizCalculus P&L Engine — with a working React frontend and a working Node/Express/MongoDB backend, fully wired together (no stubbed endpoints, no placeholder state).
+
+**Tech Stack:**
+- Frontend: React.js (Vite), Tailwind CSS, Lucide Icons, React Router, Axios (via a typed API service layer)
+- Backend: Node.js + Express, MongoDB + Mongoose
+- AI/Search: Gemini API (text generation + embeddings), faiss-node (vector similarity search for scheme matching)
+- File Handling: Multer (upload) + pdf-parse (extraction)
+- Auth: JWT + bcrypt
+
+---
+
+## 2. Global Workflow & Checklist Integration Rules
+
+| # | Rule | Trigger Condition | DB Field Updated |
+|---|------|--------------------|-------------------|
+| 1 | Complete Profile | User saves basic profile + business context | `checklistProgress.completeProfile = true` |
+| 2 | Find Matching Scheme | Successful `POST /api/schemes/scan` with valid 100–300 word idea | `checklistProgress.findMatchingScheme = true` |
+| 3 | Scan Identity Docs | Successful PDF upload + Gemini verification via Doc Whisperer | `checklistProgress.scanIdentityDocs = true` |
+| 4 | Generate P&L Plan | Successful 1-year P&L generation via BizCalculus | `checklistProgress.generatePnLPlan = true` |
+
+**Progress %** = `(tasksTrue / 4) * 100`, computed server-side and returned with every `GET /api/user/checklist` call — never computed client-side from stale state.
+
+---
+
+## 3. Component Architecture & System Modules
+
+### A. Funding Checklist & Category Selector — `FundingChecklist.jsx`, `CategorySelector.jsx`
+- Renders 4 tasks with a live progress bar (Framer Motion animated width transition).
+- Clicking an incomplete task smoothly scrolls (`scrollIntoView({behavior:'smooth'})`) to that section — sections are refs, not route changes, to avoid state loss.
+- Category pills: D2C, Tech/SaaS, AgTech, MSME/Handicrafts, Healthcare, Services — selected category persists to `businessDetails.category` on save, styled with active/inactive Tailwind variants (not just color swap — include a subtle scale + border transition).
+
+### B. Idea Input & Validation — `IdeaInput.jsx`
+- Controlled `<textarea>`, word count computed via a debounced `useMemo` (avoid recalculating on every keystroke render if the idea is long).
+- Live badge: `word count / 100 min words`, turns green at 100–300, red outside range.
+- Inline warning text exactly as specified, shown only after first blur (don't scold the user before they've typed anything).
+- "Scan Schemes 🧭" button disabled + `aria-disabled` until valid range; shows a spinner + "Matching schemes..." while `POST /api/schemes/scan` is in-flight.
+
+### C. Loan Application Generator — `ApplicationModal.jsx`
+- Opens from any scheme result card, passing `schemeId` + the saved `businessIdea`.
+- Backend drafts a formal application to the Branch Manager, explicitly referencing CGTMSE / Stand-Up India / Mudra guarantees where applicable to that scheme.
+- Modal has "Copy Text" (clipboard API, with a toast confirmation) and "Download Application PDF" (generated server-side or via a client PDF lib — pick one, don't duplicate logic in both places).
+- Handles the Gemini failure case with a retry button, not a blank modal.
+
+### D. Doc Whisperer PDF Document Scanner — `DocWhisperer.jsx`
+- Drag-and-drop zone (react-dropzone or custom) accepting Identity/MSME PDFs only.
+- Client-side pre-validation (file type + size) before hitting the network, so bad uploads never reach Multer.
+- On upload: Multer stores → `pdf-parse` extracts text → Gemini verifies structure/authenticity → returns structured JSON (`{isValid, docType, extractedFields, flags}`) → auto-ticks `scanIdentityDocs`.
+- UI shows the structured verification summary as a readable card, not raw JSON.
+
+### E. BizCalculus P&L Engine — `BizCalculus.jsx`
+- Auto-pulls saved `businessIdea` + `category` — user should never have to re-type it.
+- Gemini constructs a 1-Year P&L table: Revenue, COGS, Gross Profit, OPEX, Net Profit, Break-even month, and CFO-style advice.
+- Rendered as a real table component (sortable/scrollable if long), not a wall of text — plus a small trend chart (Recharts) for Revenue vs Net Profit across the 12 months.
+- Auto-ticks `generatePnLPlan` on successful generation; caches the last result in `pnlData` so re-visiting the tab doesn't force a re-generation (add a manual "Regenerate" button instead).
+
+---
+
+## 4. Backend Architecture
+
+### Folder Structure
+```
+server/
+├── config/          # env loader, db connection, gemini client init
+├── models/          # User.js, Scheme.js
+├── routes/          # schemes.routes.js, docs.routes.js, pnl.routes.js, auth.routes.js
+├── controllers/      # thin — validate input, call service, return response
+├── services/         # schemeMatcher.service.js, geminiClient.service.js, pdfParser.service.js
+├── middleware/       # auth.middleware.js, upload.middleware.js, errorHandler.middleware.js
+└── server.js
+```
+
+### Mongoose Schema — `User.js`
+```js
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true, required: true },
+  passwordHash: String,
+  businessDetails: {
+    businessIdea: String,
+    category: String,
+    isWomanFounder: { type: Boolean, default: true }
+  },
+  checklistProgress: {
+    completeProfile:    { type: Boolean, default: false },
+    findMatchingScheme: { type: Boolean, default: false },
+    scanIdentityDocs:   { type: Boolean, default: false },
+    generatePnLPlan:    { type: Boolean, default: false }
+  },
+  pnlData: Object,
+  docVerification: Object
+}, { timestamps: true });
+```
+
+### API Endpoint Matrix
+
+| Method & Route | Purpose | Validations | Side Effects |
+|---|---|---|---|
+| `POST /api/schemes/scan` | Word-count validated idea → faiss-node vector search + Gemini embeddings → top matched schemes w/ Pros/Cons | 100–300 words, category required | Sets `findMatchingScheme = true` |
+| `POST /api/schemes/generate-application` | `schemeId` + idea context → formal loan application draft | schemeId must exist in DB | none |
+| `POST /api/docs/analyze` | Multipart PDF → parse → Gemini authenticity check | PDF only, ≤5MB | Sets `scanIdentityDocs = true`, saves `docVerification` |
+| `POST /api/pnl/generate-pnl` | Stored idea context → 1-yr P&L metrics | Requires saved `businessIdea` | Sets `generatePnLPlan = true`, saves `pnlData` |
+| `GET /api/user/checklist` | Returns live progress % + task states | Auth required | — |
+
+Every route above returns a consistent envelope: `{ success, data, error }` — the frontend service layer should never have to branch on inconsistent response shapes.
+
+---
+
+## 5. Frontend ⇄ Backend Wiring Checklist
+
+- [ ] Central `api/axiosClient.js` with base URL + JWT interceptor — no raw `fetch`/`axios` calls scattered in components.
+- [ ] Each module has one hook (`useSchemeScan`, `useDocWhisperer`, `useBizCalculus`) that owns its loading/error/data state — components stay presentational.
+- [ ] Checklist progress bar re-fetches (or optimistically updates then reconciles) after every module action completes.
+- [ ] No component reads/writes `localStorage` directly for business data — the DB via API is the single source of truth.
+- [ ] All Gemini-dependent routes have a visible timeout/fallback UI state (never an infinite spinner).
+
+---
+
+## 6. Definition of Done
+
+A module is "done" only when: the UI state, the API contract, and the Mongoose schema field all agree — and a user can complete that step, refresh the page, and see the checklist item still marked complete.
